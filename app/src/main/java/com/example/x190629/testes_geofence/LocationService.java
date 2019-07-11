@@ -14,7 +14,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 
 import static android.content.Context.LOCATION_SERVICE;
-import static android.util.Half.POSITIVE_INFINITY;
 
 /**
  * Created by X190629 on 09/07/2019.
@@ -32,7 +31,6 @@ public class LocationService
     private LocationManager locManager;
     private LocationListener locListener;
     private Location locationGps = null, locationNetwork = null;
-    private Location nearestGoal;
 
     public LocationService(@NonNull Activity activity, @NonNull Context context, int minTimeUpdate, int minDistanceUpdate)
     {
@@ -188,18 +186,4 @@ public class LocationService
         return getDistanceBetweenLocations(startLocation.getLatitude(), startLocation.getLongitude(),
                 endLocation.getLatitude(), endLocation.getLongitude());
     }
-
-    private Location getNearestPoint(Location currentLocation, Location[] pointsOfInterest){
-    nearestGoal = null;
-    float minDistance = POSITIVE_INFINITY;
-        for(Location location : pointsOfInterest){
-        if(minDistance > getDistanceBetweenLocations(location,currentLocation)) {
-            minDistance = getDistanceBetweenLocations(location, currentLocation);
-            nearestGoal = location;
-        }
-    }
-
-    return nearestGoal;
-    }
-
 }
