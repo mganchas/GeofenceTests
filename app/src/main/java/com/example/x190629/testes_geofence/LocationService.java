@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.widget.Toast;
 
 import static android.content.Context.LOCATION_SERVICE;
 
@@ -88,20 +89,26 @@ public class LocationService
             }
         };
 
-        startLocationUpdates();
+        try {
+            startLocationUpdates();
+        } catch (IllegalAccessException e)
+        {
+            Toast.makeText(context, "No Location permissions", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
     }
 
-    public void startLocationUpdates()
+    public void startLocationUpdates() throws IllegalAccessException
     {
         startLocationUpdates(minTimeUpdate, minDistanceUpdate);
     }
 
     @SuppressLint("MissingPermission")
-    public void startLocationUpdates(int minTimeUpdate, int minDistanceUpdate)
+    public void startLocationUpdates(int minTimeUpdate, int minDistanceUpdate) throws IllegalAccessException
     {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
         {
-            return;
+            throw new IllegalAccessException("No permission for Location");
         }
 
         locManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,

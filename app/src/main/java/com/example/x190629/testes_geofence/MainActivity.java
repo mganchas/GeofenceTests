@@ -1,7 +1,6 @@
 package com.example.x190629.testes_geofence;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -59,7 +58,7 @@ public class MainActivity extends AppCompatActivity
         createGeoFences();
 
         // check location permission
-        while (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
         {
             Toast.makeText(this, "É preciso aceitar...", Toast.LENGTH_SHORT).show();
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION} ,1);
@@ -80,7 +79,13 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
 
-        initializeLocationService();
+        locationService = new LocationService(
+                this,
+                this,
+                MIN_TIME_LOCATION_UPDATE,
+                MIN_DISTANCE_LOCATION_UPDATE
+        );
+
         setLocationManager();
 
         if (!LocationService.hasLocationPermissionsAndConnection(this, this)) {
@@ -127,17 +132,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-
-    private void initializeLocationService()
-    {
-        locationService = new LocationService(
-                this,
-                this,
-                MIN_TIME_LOCATION_UPDATE,
-                MIN_DISTANCE_LOCATION_UPDATE
-        );
-    }
-
     private void setLocationManager()
     {
         locationService.initializeLocationManager
@@ -147,7 +141,7 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void onLocationChanged(Location location)
                     {
-                        String country = getCountryName(location.getLatitude(), location.getLongitude());
+                        String country = getCountryCode(location.getLatitude(), location.getLongitude());
                         txt_location.setText(country + ": \n" +
                                 location.getLatitude() + ", \n" +
                                 location.getLongitude() + ", \n" +
@@ -194,7 +188,7 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-    private String getCountryName(double latitude, double longitude)
+    private String getCountryCode(double latitude, double longitude)
     {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         List<Address> addresses;
@@ -231,7 +225,7 @@ public class MainActivity extends AppCompatActivity
 
         // bcp edificio 9
         fence.clear();
-        fence.add(new GeoArea(38.7440651,-9.3067674,20));
+        fence.add(new GeoArea(38.743919,-9.306373,100));
         airports.add(new Airport("BCP", fence));
 
         return airports;
