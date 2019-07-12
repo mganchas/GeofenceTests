@@ -2,33 +2,22 @@ package com.example.x190629.testes_geofence;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.PendingIntent;
-import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Address;
-import android.location.Geocoder;
 import android.location.Location;
-import android.support.annotation.NonNull;
+import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
-import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
@@ -60,7 +49,6 @@ public class MainActivity extends AppCompatActivity
         }
 
         geofencingClient = LocationServices.getGeofencingClient(this);
-        createGeoFences();
 
         // check location permission
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
@@ -69,21 +57,6 @@ public class MainActivity extends AppCompatActivity
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION} ,1);
             return;
         }
-
-        geofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
-                .addOnSuccessListener(this, new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid)
-                    {
-
-                    }
-                })
-                .addOnFailureListener(this, new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(MainActivity.this, "Falhou adicionar geofence", Toast.LENGTH_SHORT).show();
-                    }
-                });
 
         locationService = new LocationService(
                 this,
@@ -119,35 +92,6 @@ public class MainActivity extends AppCompatActivity
         super.onPause();
     }
 
-    private void createGeoFences()
-    {
-        for (Map.Entry<String, GeoArea> point: pointsOfInterest.entrySet())
-        {
-            geofenceList.add(
-                    new Geofence.Builder()
-                            .setRequestId(point.getKey() + "_" + point.getValue().hashCode())
-                            .setCircularRegion(point.getValue().getLatitude(), point.getValue().getLongitude(), point.getValue().getRadius())
-                            .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-                            //.setLoiteringDelay(1)
-                            .build()
-            );
-        }
-    }
-
-    private GeofencingRequest getGeofencingRequest()
-    {
-        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
-        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
-        builder.addGeofences(geofenceList);
-        return builder.build();
-    }
-
-    private PendingIntent getGeofencePendingIntent() {
-        Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
-        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-    }
-
     private void setLocationManager()
     {
         locationService.initializeLocationManager
@@ -163,15 +107,19 @@ public class MainActivity extends AppCompatActivity
                                     country = LocationService.getCountryCode(MainActivity.this, location.getLatitude(), location.getLongitude());
                                 } catch (IOException ignored) {}
 
-                                GeoArea nearest = LocationService.getNearestPoint(location, pointsOfInterest.values());
+                                NearestPoint nearest = LocationService.getNearestPoint(location, pointsOfInterest.values());
+                                boolean isInside = nearest.getDistance() <= nearest.getGeoArea().getRadius();
 
-                                txt_location.setText("<Atual> \n" +
+                                txt_location.setText("<Localização Atual> \n" +
                                         "\t" + country + " \n" +
                                         "\t" + location.getLatitude() + ", " + location.getLongitude() + " \n" +
                                         "\t" + location.getAccuracy() + " \n" +
                                         "\t" + location.getProvider() + " \n" +
-                                        "<Mais perto> \n" +
-                                        "\t" + nearest.getLatitude() + ", " + nearest.getLongitude()
+                                        "<Geofence mais perto> \n" +
+                                        "\t" + nearest.getDistance() + " \n" +
+                                        "\t" + nearest.getGeoArea().getLatitude() + ", " + nearest.getGeoArea().getLongitude() + " \n" +
+                                        "<Dentro da geofence?> \n" +
+                                        "\t" + isInside
                                 );
 
                             }
@@ -212,7 +160,7 @@ public class MainActivity extends AppCompatActivity
         points.put("Humberto Delgado", new GeoArea(38.794769, -9.129276, 240.36f));
 
         // bcp edificio 9
-        points.put("BCP", new GeoArea(38.743919,-9.306373,10000));
+        points.put("BCP", new GeoArea(38.743919,-9.306373,10));
 
         return points;
     }

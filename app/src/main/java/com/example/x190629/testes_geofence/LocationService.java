@@ -212,21 +212,21 @@ public class LocationService
         return null;
     }
 
-    public static GeoArea getNearestPoint(Location currentLocation, Collection<GeoArea> pointsOfInterest)
+    public static NearestPoint getNearestPoint(Location currentLocation, Collection<GeoArea> pointsOfInterest)
     {
         GeoArea nearestGoal = null;
-        float minDistance = POSITIVE_INFINITY;
+        float distance = POSITIVE_INFINITY;
 
         for(GeoArea location : pointsOfInterest)
         {
             float distanceBetweenLocations = getDistanceBetweenLocations(location.getLatitude(), location.getLongitude(), currentLocation.getLatitude(), currentLocation.getLongitude());
-            if(minDistance > distanceBetweenLocations)
+            if(distance > distanceBetweenLocations)
             {
-                minDistance = distanceBetweenLocations;
+                distance = distanceBetweenLocations;
                 nearestGoal = location;
             }
         }
 
-        return nearestGoal;
+        return new NearestPoint(nearestGoal, distance);
     }
 }
