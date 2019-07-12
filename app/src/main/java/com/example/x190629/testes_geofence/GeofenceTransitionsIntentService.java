@@ -1,9 +1,10 @@
 package com.example.x190629.testes_geofence;
 
+import android.annotation.SuppressLint;
 import android.app.IntentService;
 import android.content.Intent;
+import android.os.Handler;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;
@@ -18,38 +19,45 @@ import static android.content.ContentValues.TAG;
 
 public class GeofenceTransitionsIntentService extends IntentService
 {
+    Handler mHandler;
     /**
      * Creates an IntentService.  Invoked by your subclass's constructor.
      *
      * @param name Used to name the worker thread, important only for debugging.
      */
+
     public GeofenceTransitionsIntentService(String name) {
         super(name);
+        mHandler = new Handler();
     }
 
     // ...
     protected void onHandleIntent(Intent intent)
     {
+        mHandler.post(new DisplayToast(TestesGeofenceApp.getContext(), "onHandleIntent started"));
+
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
         if (geofencingEvent.hasError())
         {
-            Toast.makeText(this,"geofencingEvent.hasError() = true", Toast.LENGTH_LONG).show();
+            mHandler.post(new DisplayToast(TestesGeofenceApp.getContext(), "geofencingEvent.hasError() = true"));
             return;
         }
 
         // Get the transition type.
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
-        Toast.makeText(this,"geofenceTransition: " + geofenceTransition, Toast.LENGTH_LONG).show();
+        mHandler.post(new DisplayToast(TestesGeofenceApp.getContext(), "geofenceTransition: " + geofenceTransition));
 
         // Test that the reported transition was of interest.
-        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER || geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT)
+        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
+                geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT ||
+                geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL)
         {
             // Get the geofences that were triggered. A single event can trigger
             // multiple geofences.
             List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
 
             for (Geofence geofence : triggeringGeofences) {
-                Toast.makeText(this,"geofence.getRequestId(): " + geofence.getRequestId(), Toast.LENGTH_LONG).show();
+                mHandler.post(new DisplayToast(TestesGeofenceApp.getContext(), "geofence.getRequestId(): " + geofence.getRequestId()));
             }
 
             // Get the transition details as a String.
@@ -67,7 +75,7 @@ public class GeofenceTransitionsIntentService extends IntentService
         else
         {
             // Log the error.
-            Log.e(TAG, getString(R.string.geofence_transition_invalid_type, geofenceTransition));
+            mHandler.post(new DisplayToast(TestesGeofenceApp.getContext(), "Hello World!"));
         }
     }
 }

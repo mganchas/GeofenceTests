@@ -9,8 +9,16 @@ import android.content.Context;
 
 public class TestesGeofenceApp extends Application
 {
+    private static Context context;
+
     @Override
-    public void onCreate() {
+    public void onCreate()
+    {
         super.onCreate();
+        TestesGeofenceApp.context = getApplicationContext();
+    }
+
+    public static Context getContext() {
+        return context;
     }
 }

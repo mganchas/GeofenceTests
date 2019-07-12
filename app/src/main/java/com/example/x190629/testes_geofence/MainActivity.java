@@ -2,6 +2,7 @@ package com.example.x190629.testes_geofence;
 
 import android.Manifest;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
@@ -22,9 +23,12 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -33,10 +37,10 @@ public class MainActivity extends AppCompatActivity
     private static final int RADIUS_METERS = 100;
     private static final String PORTUGAL_COUNTRY_CODE = "PT";
 
-    private static List<Airport> airports = new ArrayList<>();
+    private static List<Location> pointsOfInterestLocations;
+    private static Map<String, GeoArea> pointsOfInterest = new HashMap();
 
     private LocationService locationService;
-    private PendingIntent geofencePendingIntent;
     private List<Geofence> geofenceList = new ArrayList<>();
     private GeofencingClient geofencingClient;
 
@@ -50,8 +54,8 @@ public class MainActivity extends AppCompatActivity
 
         txt_location = findViewById(R.id.txt_localizacao);
 
-        if (airports == null || airports.isEmpty()) {
-            airports = getAirports();
+        if (pointsOfInterest == null || pointsOfInterest.isEmpty()) {
+            pointsOfInterest = getPointsOfInterest();
         }
 
         geofencingClient = LocationServices.getGeofencingClient(this);
@@ -69,7 +73,6 @@ public class MainActivity extends AppCompatActivity
                 .addOnSuccessListener(this, new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
-                        Toast.makeText(MainActivity.this, "Sucesso em adicionar geofence", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(this, new OnFailureListener() {
@@ -115,20 +118,17 @@ public class MainActivity extends AppCompatActivity
 
     private void createGeoFences()
     {
-        for (Airport airport: airports)
+        for (Map.Entry<String, GeoArea> point: pointsOfInterest.entrySet())
         {
-            for (GeoArea geoArea : airport.getFence())
-            {
-                geofenceList.add(
-                        new Geofence.Builder()
-                                .setRequestId(airport.getName() + "_" + geoArea.hashCode())
-                                .setCircularRegion(geoArea.getLatitude(), geoArea.getLongitude(), geoArea.getRadius())
-                                .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT | Geofence.GEOFENCE_TRANSITION_DWELL)
-                                .setLoiteringDelay(1)
-                                .build()
-                );
-            }
+            geofenceList.add(
+                    new Geofence.Builder()
+                            .setRequestId(point.getKey() + "_" + point.getValue().hashCode())
+                            .setCircularRegion(point.getValue().getLatitude(), point.getValue().getLongitude(), point.getValue().getRadius())
+                            .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT | Geofence.GEOFENCE_TRANSITION_DWELL)
+                            .setLoiteringDelay(1)
+                            .build()
+            );
         }
     }
 
@@ -141,13 +141,22 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void onLocationChanged(Location location)
                     {
-                        String country = getCountryCode(location.getLatitude(), location.getLongitude());
-                        txt_location.setText(country + ": \n" +
-                                location.getLatitude() + ", \n" +
-                                location.getLongitude() + ", \n" +
-                                location.getAccuracy() + ", \n" +
-                                location.getProvider()
+                        String country = null;
+                        try {
+                            country = LocationService.getCountryCode(MainActivity.this, location.getLatitude(), location.getLongitude());
+                        } catch (IOException ignored) {}
+
+                        GeoArea nearest = LocationService.getNearestPoint(location, pointsOfInterest.values());
+
+                        txt_location.setText("<Atual> \n" +
+                                "\t" + country + " \n" +
+                                "\t" + location.getLatitude() + ", " + location.getLongitude() + " \n" +
+                                "\t" + location.getAccuracy() + " \n" +
+                                "\t" + location.getProvider() + " \n" +
+                                "<Mais perto> \n" +
+                                "\t" + nearest.getLatitude() + ", " + nearest.getLongitude()
                         );
+
                     }
                 },
                 new ILocationManagerProviderEnabled()
@@ -170,64 +179,37 @@ public class MainActivity extends AppCompatActivity
     private GeofencingRequest getGeofencingRequest()
     {
         GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
-        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER | GeofencingRequest.INITIAL_TRIGGER_DWELL);
         builder.addGeofences(geofenceList);
         return builder.build();
     }
 
     private PendingIntent getGeofencePendingIntent() {
-        // Reuse the PendingIntent if we already have it.
-        if (geofencePendingIntent != null) {
-            return geofencePendingIntent;
-        }
         Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
-        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when
-        // calling addGeofences() and removeGeofences().
-        geofencePendingIntent = PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        return geofencePendingIntent;
+        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-
-    private String getCountryCode(double latitude, double longitude)
+    private static Map<String, GeoArea> getPointsOfInterest()
     {
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-        List<Address> addresses;
-        try {
-            addresses = geocoder.getFromLocation(latitude, longitude, 1);
-            if (addresses != null && !addresses.isEmpty()) {
-                return addresses.get(0).getCountryCode();
-            }
-        } catch (IOException ioe) { }
-        return null;
-    }
-
-    private static List<Airport> getAirports()
-    {
-        List<Airport> airports = new ArrayList<>();
-        List<GeoArea> fence = new ArrayList<>();
+        Map<String, GeoArea> points = new HashMap<>();
 
         // beja
-        fence.add(new GeoArea(38.079048, -7.925615, 2000.00f));
-        airports.add(new Airport("Beja", fence));
+        points.put("Beja", new GeoArea(38.079048, -7.925615, 2000.00f));
 
         // humberto delgado
-        fence.clear();
-        fence.add(new GeoArea(38.765486, -9.142942, 225.36f));
-        fence.add(new GeoArea(38.769585, -9.139723, 305.45f));
-        fence.add(new GeoArea(38.767427, -9.133200, 270.06f));
-        fence.add(new GeoArea(38.769501, -9.128865, 158.31f));
-        fence.add(new GeoArea(38.775058, -9.133049, 545.70f));
-        fence.add(new GeoArea(38.782845, -9.134198, 188.22f));
-        fence.add(new GeoArea(38.786811, -9.133851, 240.36f));
-        fence.add(new GeoArea(38.790781, -9.131366, 240.36f));
-        fence.add(new GeoArea(38.794769, -9.129276, 240.36f));
-        airports.add(new Airport("Humberto Delgado", fence));
+        points.put("Humberto Delgado", new GeoArea(38.765486, -9.142942, 225.36f));
+        points.put("Humberto Delgado", new GeoArea(38.769585, -9.139723, 305.45f));
+        points.put("Humberto Delgado", new GeoArea(38.767427, -9.133200, 270.06f));
+        points.put("Humberto Delgado", new GeoArea(38.769501, -9.128865, 158.31f));
+        points.put("Humberto Delgado", new GeoArea(38.775058, -9.133049, 545.70f));
+        points.put("Humberto Delgado", new GeoArea(38.782845, -9.134198, 188.22f));
+        points.put("Humberto Delgado", new GeoArea(38.786811, -9.133851, 240.36f));
+        points.put("Humberto Delgado", new GeoArea(38.790781, -9.131366, 240.36f));
+        points.put("Humberto Delgado", new GeoArea(38.794769, -9.129276, 240.36f));
 
         // bcp edificio 9
-        fence.clear();
-        fence.add(new GeoArea(38.743919,-9.306373,100));
-        airports.add(new Airport("BCP", fence));
+        points.put("BCP", new GeoArea(38.743919,-9.306373,10000));
 
-        return airports;
+        return points;
     }
 }

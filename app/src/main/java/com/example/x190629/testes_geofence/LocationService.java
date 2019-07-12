@@ -5,6 +5,8 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -14,7 +16,13 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+
 import static android.content.Context.LOCATION_SERVICE;
+import static java.lang.Float.POSITIVE_INFINITY;
 
 /**
  * Created by X190629 on 09/07/2019.
@@ -192,5 +200,33 @@ public class LocationService
     {
         return getDistanceBetweenLocations(startLocation.getLatitude(), startLocation.getLongitude(),
                 endLocation.getLatitude(), endLocation.getLongitude());
+    }
+
+    public static String getCountryCode(Context context, double latitude, double longitude) throws IOException
+    {
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+        if (addresses != null && !addresses.isEmpty()) {
+            return addresses.get(0).getCountryCode();
+        }
+        return null;
+    }
+
+    public static GeoArea getNearestPoint(Location currentLocation, Collection<GeoArea> pointsOfInterest)
+    {
+        GeoArea nearestGoal = null;
+        float minDistance = POSITIVE_INFINITY;
+
+        for(GeoArea location : pointsOfInterest)
+        {
+            float distanceBetweenLocations = getDistanceBetweenLocations(location.getLatitude(), location.getLongitude(), currentLocation.getLatitude(), currentLocation.getLongitude());
+            if(minDistance > distanceBetweenLocations)
+            {
+                minDistance = distanceBetweenLocations;
+                nearestGoal = location;
+            }
+        }
+
+        return nearestGoal;
     }
 }
