@@ -193,13 +193,12 @@ public class LocationService
     nearestGoal = null;
     float minDistance = POSITIVE_INFINITY;
         for(Location location : pointsOfInterest){
-        if(minDistance > getDistanceBetweenLocations(location,currentLocation)) {
+            if(minDistance > getDistanceBetweenLocations(location,currentLocation)) {
             minDistance = getDistanceBetweenLocations(location, currentLocation);
             nearestGoal = location;
+            }
         }
-    }
-
-    return nearestGoal;
+        return nearestGoal;
     }
 
 }
