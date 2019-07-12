@@ -1,6 +1,7 @@
 package com.example.x190629.testes_geofence;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -72,7 +73,9 @@ public class MainActivity extends AppCompatActivity
         geofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
                 .addOnSuccessListener(this, new OnSuccessListener<Void>() {
                     @Override
-                    public void onSuccess(Void aVoid) {
+                    public void onSuccess(Void aVoid)
+                    {
+
                     }
                 })
                 .addOnFailureListener(this, new OnFailureListener() {
@@ -125,61 +128,17 @@ public class MainActivity extends AppCompatActivity
                             .setRequestId(point.getKey() + "_" + point.getValue().hashCode())
                             .setCircularRegion(point.getValue().getLatitude(), point.getValue().getLongitude(), point.getValue().getRadius())
                             .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT | Geofence.GEOFENCE_TRANSITION_DWELL)
-                            .setLoiteringDelay(1)
+                            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                            //.setLoiteringDelay(1)
                             .build()
             );
         }
     }
 
-    private void setLocationManager()
-    {
-        locationService.initializeLocationManager
-        (
-                new ILocationManagerLocationChanged()
-                {
-                    @Override
-                    public void onLocationChanged(Location location)
-                    {
-                        String country = null;
-                        try {
-                            country = LocationService.getCountryCode(MainActivity.this, location.getLatitude(), location.getLongitude());
-                        } catch (IOException ignored) {}
-
-                        GeoArea nearest = LocationService.getNearestPoint(location, pointsOfInterest.values());
-
-                        txt_location.setText("<Atual> \n" +
-                                "\t" + country + " \n" +
-                                "\t" + location.getLatitude() + ", " + location.getLongitude() + " \n" +
-                                "\t" + location.getAccuracy() + " \n" +
-                                "\t" + location.getProvider() + " \n" +
-                                "<Mais perto> \n" +
-                                "\t" + nearest.getLatitude() + ", " + nearest.getLongitude()
-                        );
-
-                    }
-                },
-                new ILocationManagerProviderEnabled()
-                {
-                    @Override
-                    public void onProviderEnabled(String provider)
-                    {
-                        setLocationManager();
-                    }
-                },
-                new ILocationManagerProviderDisabled()
-                {
-                    @Override
-                    public void onProviderDisabled(String provider)
-                    { }
-                }
-        );
-    }
-
     private GeofencingRequest getGeofencingRequest()
     {
         GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
-        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER | GeofencingRequest.INITIAL_TRIGGER_DWELL);
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
         builder.addGeofences(geofenceList);
         return builder.build();
     }
@@ -187,6 +146,51 @@ public class MainActivity extends AppCompatActivity
     private PendingIntent getGeofencePendingIntent() {
         Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
         return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    private void setLocationManager()
+    {
+        locationService.initializeLocationManager
+                (
+                        new ILocationManagerLocationChanged()
+                        {
+                            @SuppressLint("SetTextI18n")
+                            @Override
+                            public void onLocationChanged(Location location)
+                            {
+                                String country = null;
+                                try {
+                                    country = LocationService.getCountryCode(MainActivity.this, location.getLatitude(), location.getLongitude());
+                                } catch (IOException ignored) {}
+
+                                GeoArea nearest = LocationService.getNearestPoint(location, pointsOfInterest.values());
+
+                                txt_location.setText("<Atual> \n" +
+                                        "\t" + country + " \n" +
+                                        "\t" + location.getLatitude() + ", " + location.getLongitude() + " \n" +
+                                        "\t" + location.getAccuracy() + " \n" +
+                                        "\t" + location.getProvider() + " \n" +
+                                        "<Mais perto> \n" +
+                                        "\t" + nearest.getLatitude() + ", " + nearest.getLongitude()
+                                );
+
+                            }
+                        },
+                        new ILocationManagerProviderEnabled()
+                        {
+                            @Override
+                            public void onProviderEnabled(String provider)
+                            {
+                                setLocationManager();
+                            }
+                        },
+                        new ILocationManagerProviderDisabled()
+                        {
+                            @Override
+                            public void onProviderDisabled(String provider)
+                            { }
+                        }
+                );
     }
 
     private static Map<String, GeoArea> getPointsOfInterest()

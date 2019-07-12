@@ -19,16 +19,10 @@ import static android.content.ContentValues.TAG;
 
 public class GeofenceTransitionsIntentService extends IntentService
 {
-    Handler mHandler;
-    /**
-     * Creates an IntentService.  Invoked by your subclass's constructor.
-     *
-     * @param name Used to name the worker thread, important only for debugging.
-     */
+    Handler mHandler = new Handler();
 
-    public GeofenceTransitionsIntentService(String name) {
-        super(name);
-        mHandler = new Handler();
+    public GeofenceTransitionsIntentService(){
+        super("GeofenceTransitionsIntentService");
     }
 
     // ...
