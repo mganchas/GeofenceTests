@@ -1,6 +1,8 @@
-package com.example.x190629.testes_geofence;
+package com.example.x190629.testes_geofence.entities;
 
 import android.support.annotation.NonNull;
+
+import com.example.x190629.testes_geofence.entities.GeoArea;
 
 import java.io.Serializable;
 import java.util.List;

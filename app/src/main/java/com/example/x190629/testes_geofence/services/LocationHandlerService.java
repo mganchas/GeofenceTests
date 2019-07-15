@@ -1,9 +1,10 @@
-package com.example.x190629.testes_geofence;
+package com.example.x190629.testes_geofence.services;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -14,7 +15,23 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 import android.widget.Toast;
+
+import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerLocationChanged;
+import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderDisabled;
+import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderEnabled;
+import com.example.x190629.testes_geofence.entities.GeoArea;
+import com.example.x190629.testes_geofence.entities.NearestPoint;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -24,26 +41,23 @@ import java.util.Locale;
 import static android.content.Context.LOCATION_SERVICE;
 import static java.lang.Float.POSITIVE_INFINITY;
 
-/**
- * Created by X190629 on 09/07/2019.
- */
-
-public class LocationService
+public class LocationHandlerService
 {
+    private static final String TAG = LocationHandlerService.class.getSimpleName();
     private static final String PROVIDER_GPS = "gps";
     private static final String PROVIDER_NETWORK = "network";
+    private static final int INTERVAL_TIME_LOCATION_UPDATE = 10 * 1000; // in milliseconds
+    private static final int INTERVAL_TIME_FASTEST_LOCATION_UPDATE = 5 * 1000; // in milliseconds
 
     private final int minTimeUpdate, minDistanceUpdate;
 
-    private Activity activity;
     private Context context;
     private LocationManager locManager;
     private LocationListener locListener;
     private Location locationGps = null, locationNetwork = null;
 
-    public LocationService(@NonNull Activity activity, @NonNull Context context, int minTimeUpdate, int minDistanceUpdate)
+    public LocationHandlerService(@NonNull Context context, int minTimeUpdate, int minDistanceUpdate)
     {
-        this.activity = activity;
         this.context = context;
         this.minTimeUpdate = minTimeUpdate;
         this.minDistanceUpdate = minDistanceUpdate;
@@ -138,7 +152,8 @@ public class LocationService
         locListener = null;
     }
 
-    public Location getBestLocationAvailable()
+    @SuppressLint("MissingPermission")
+    public Location getGetBestLocationAvailable()
     {
         if (locationGps != null) {
             return locationGps;
@@ -148,10 +163,25 @@ public class LocationService
             return locationNetwork;
         }
 
+        Location ctxLocation = locManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        if (ctxLocation != null) {
+            return ctxLocation;
+        }
+
+        ctxLocation = locManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if (ctxLocation != null) {
+            return ctxLocation;
+        }
+
+        ctxLocation = locManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+        if (ctxLocation != null) {
+            return ctxLocation;
+        }
+
         return null;
     }
 
-    public static boolean hasLocationPermissionsAndConnection(@NonNull Context context, @NonNull Activity activity)
+    public static boolean hasLocationPermissionsAndConnection(@NonNull Context context)
     {
         return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
                 isAnyLocationProviderConnected(context);
@@ -202,12 +232,12 @@ public class LocationService
                 endLocation.getLatitude(), endLocation.getLongitude());
     }
 
-    public static String getCountryCode(Context context, double latitude, double longitude) throws IOException
+    public static Address getLocationAddress(Context context, double latitude, double longitude) throws IOException
     {
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
         List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
         if (addresses != null && !addresses.isEmpty()) {
-            return addresses.get(0).getCountryCode();
+            return addresses.get(0);
         }
         return null;
     }
@@ -219,7 +249,13 @@ public class LocationService
 
         for(GeoArea location : pointsOfInterest)
         {
-            float distanceBetweenLocations = getDistanceBetweenLocations(location.getLatitude(), location.getLongitude(), currentLocation.getLatitude(), currentLocation.getLongitude());
+            float distanceBetweenLocations = getDistanceBetweenLocations(
+                    location.getLatitude(),
+                    location.getLongitude(),
+                    currentLocation.getLatitude(),
+                    currentLocation.getLongitude()
+            );
+
             if(distance > distanceBetweenLocations)
             {
                 distance = distanceBetweenLocations;
@@ -228,5 +264,37 @@ public class LocationService
         }
 
         return new NearestPoint(nearestGoal, distance);
+    }
+
+    public static void connectToGooglePlayServices(@NonNull final Activity activity)
+    {
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(INTERVAL_TIME_LOCATION_UPDATE);
+        locationRequest.setFastestInterval(INTERVAL_TIME_FASTEST_LOCATION_UPDATE);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        builder.setAlwaysShow(true);
+
+        Task<LocationSettingsResponse> result = LocationServices.getSettingsClient(activity).checkLocationSettings(builder.build());
+        result.addOnCompleteListener(new OnCompleteListener<LocationSettingsResponse>()
+        {
+            @Override
+            public void onComplete(@NonNull Task<LocationSettingsResponse> task) {
+                try {
+                    task.getResult(ApiException.class);
+                } catch (ApiException exception) {
+                    if (exception.getStatusCode() == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
+                        try {
+                            ResolvableApiException resolvable = (ResolvableApiException) exception;
+                            resolvable.startResolutionForResult(activity, 100);
+                        } catch (IntentSender.SendIntentException e) {
+                            Log.d(TAG, e.getMessage());
+                        } catch (ClassCastException e) {
+                            Log.d(TAG, e.getMessage());
+                        }
+                    }
+                }
+            }
+        });
     }
 }

@@ -1,4 +1,4 @@
-package com.example.x190629.testes_geofence;
+package com.example.x190629.testes_geofence.services.abstractions;
 
 import android.location.Location;
 

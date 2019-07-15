@@ -2,37 +2,42 @@ package com.example.x190629.testes_geofence;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Address;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.location.Geofence;
-import com.google.android.gms.location.GeofencingClient;
-import com.google.android.gms.location.LocationServices;
+import com.example.x190629.testes_geofence.entities.GeoArea;
+import com.example.x190629.testes_geofence.entities.NearestPoint;
+import com.example.x190629.testes_geofence.services.LocationHandlerService;
+import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerLocationChanged;
+import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderDisabled;
+import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderEnabled;
+import com.example.x190629.testes_geofence.services.backgroundservices.BackgroundService;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
 {
     private static final int MIN_TIME_LOCATION_UPDATE = 0; // in milliseconds
     private static final int MIN_DISTANCE_LOCATION_UPDATE = 0; // in meters
-    private static final int RADIUS_METERS = 100;
     private static final String PORTUGAL_COUNTRY_CODE = "PT";
 
-    private static List<Location> pointsOfInterestLocations;
     private static Map<String, GeoArea> pointsOfInterest = new HashMap();
 
-    private LocationService locationService;
-    private List<Geofence> geofenceList = new ArrayList<>();
-    private GeofencingClient geofencingClient;
+    private Intent locationServiceIntent;
+    private BackgroundService backgroundService;
+    private LocationHandlerService locationHandlerService;
 
     private TextView txt_location;
 
@@ -48,8 +53,6 @@ public class MainActivity extends AppCompatActivity
             pointsOfInterest = getPointsOfInterest();
         }
 
-        geofencingClient = LocationServices.getGeofencingClient(this);
-
         // check location permission
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
         {
@@ -58,8 +61,7 @@ public class MainActivity extends AppCompatActivity
             return;
         }
 
-        locationService = new LocationService(
-                this,
+        locationHandlerService = new LocationHandlerService(
                 this,
                 MIN_TIME_LOCATION_UPDATE,
                 MIN_DISTANCE_LOCATION_UPDATE
@@ -67,8 +69,15 @@ public class MainActivity extends AppCompatActivity
 
         setLocationManager();
 
-        if (!LocationService.hasLocationPermissionsAndConnection(this, this)) {
-            Toast.makeText(this, "Ativa o GPS por favor", Toast.LENGTH_SHORT).show();
+        if (!LocationHandlerService.hasLocationPermissionsAndConnection(this)) {
+            LocationHandlerService.connectToGooglePlayServices(this);
+        }
+
+        backgroundService = new BackgroundService();
+        locationServiceIntent = new Intent(this, backgroundService.getClass());
+
+        if (!isMyServiceRunning(backgroundService.getClass())) {
+            startService(locationServiceIntent);
         }
     }
 
@@ -83,18 +92,41 @@ public class MainActivity extends AppCompatActivity
             return;
         }
 
-        if (locationService != null) setLocationManager();
+        if (locationHandlerService != null) setLocationManager();
     }
 
     @Override
     protected void onPause() {
-        if (locationService != null) locationService.stopLocationUpdates();
+        if (locationHandlerService != null) locationHandlerService.stopLocationUpdates();
         super.onPause();
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        stopService(locationServiceIntent);
+        Log.i("MAINACT", "onDestroy!");
+        super.onDestroy();
+
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass)
+    {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
+        {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                Log.i ("isMyServiceRunning?", true+"");
+                return true;
+            }
+        }
+        Log.i ("isMyServiceRunning?", false+"");
+        return false;
     }
 
     private void setLocationManager()
     {
-        locationService.initializeLocationManager
+        locationHandlerService.initializeLocationManager
                 (
                         new ILocationManagerLocationChanged()
                         {
@@ -102,16 +134,22 @@ public class MainActivity extends AppCompatActivity
                             @Override
                             public void onLocationChanged(Location location)
                             {
-                                String country = null;
+                                String country = null, locality = null;
                                 try {
-                                    country = LocationService.getCountryCode(MainActivity.this, location.getLatitude(), location.getLongitude());
+                                    Address address = LocationHandlerService.getLocationAddress(MainActivity.this, location.getLatitude(), location.getLongitude());
+                                    if (address != null)
+                                    {
+                                        country = address.getCountryCode();
+                                        locality = address.getLocality();
+                                    }
                                 } catch (IOException ignored) {}
 
-                                NearestPoint nearest = LocationService.getNearestPoint(location, pointsOfInterest.values());
+                                NearestPoint nearest = LocationHandlerService.getNearestPoint(location, pointsOfInterest.values());
                                 boolean isInside = nearest.getDistance() <= nearest.getGeoArea().getRadius();
 
                                 txt_location.setText("<Localização Atual> \n" +
                                         "\t" + country + " \n" +
+                                        "\t" + locality + " \n" +
                                         "\t" + location.getLatitude() + ", " + location.getLongitude() + " \n" +
                                         "\t" + location.getAccuracy() + " \n" +
                                         "\t" + location.getProvider() + " \n" +
