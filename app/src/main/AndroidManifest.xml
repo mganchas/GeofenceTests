@@ -20,7 +20,17 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".GeofenceTransitionsIntentService"/>
-    </application>
+        <service
+            android:name=".services.backgroundservices.BackgroundService"
+            android:enabled="true" >
+        </service>
 
+        <receiver
+            android:name=".receivers.BackgroundServiceRestarterBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:label="RestartServiceWhenStopped">
+        </receiver>
+
+    </application>
 </manifest>

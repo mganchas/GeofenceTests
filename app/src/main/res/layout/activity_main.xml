@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:text="000, 000"
         android:scrollHorizontally="false"
-        android:maxLines="10"
+        android:maxLines="15"
         android:inputType="textMultiLine"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"

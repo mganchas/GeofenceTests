@@ -1,4 +1,4 @@
-package com.example.x190629.testes_geofence;
+package com.example.x190629.testes_geofence.entities;
 
 /**
  * Created by X190629 on 11/07/2019.
