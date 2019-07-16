@@ -242,6 +242,10 @@ public class LocationHandlerService
         return null;
     }
 
+    public NearestPoint getNearestPoint(Collection<GeoArea> pointsOfInterest) {
+        return getNearestPoint(getGetBestLocationAvailable(), pointsOfInterest);
+    }
+
     public static NearestPoint getNearestPoint(Location currentLocation, Collection<GeoArea> pointsOfInterest)
     {
         GeoArea nearestGoal = null;

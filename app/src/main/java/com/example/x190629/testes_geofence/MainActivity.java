@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import com.example.x190629.testes_geofence.entities.GeoArea;
 import com.example.x190629.testes_geofence.entities.NearestPoint;
+import com.example.x190629.testes_geofence.entities.PointsOfInterest;
 import com.example.x190629.testes_geofence.services.LocationHandlerService;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerLocationChanged;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderDisabled;
@@ -33,8 +34,6 @@ public class MainActivity extends AppCompatActivity
     private static final int MIN_DISTANCE_LOCATION_UPDATE = 0; // in meters
     private static final String PORTUGAL_COUNTRY_CODE = "PT";
 
-    private static Map<String, GeoArea> pointsOfInterest = new HashMap();
-
     private Intent locationServiceIntent;
     private BackgroundService backgroundService;
     private LocationHandlerService locationHandlerService;
@@ -49,9 +48,6 @@ public class MainActivity extends AppCompatActivity
 
         txt_location = findViewById(R.id.txt_localizacao);
 
-        if (pointsOfInterest == null || pointsOfInterest.isEmpty()) {
-            pointsOfInterest = getPointsOfInterest();
-        }
 
         // check location permission
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
@@ -62,10 +58,10 @@ public class MainActivity extends AppCompatActivity
         }
 
         locationHandlerService = new LocationHandlerService(
-                this,
-                MIN_TIME_LOCATION_UPDATE,
-                MIN_DISTANCE_LOCATION_UPDATE
-        );
+            this,
+            MIN_TIME_LOCATION_UPDATE,
+            MIN_DISTANCE_LOCATION_UPDATE
+    );
 
         setLocationManager();
 
@@ -116,8 +112,8 @@ public class MainActivity extends AppCompatActivity
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
         {
             if (serviceClass.getName().equals(service.service.getClassName())) {
-                Log.i ("isMyServiceRunning?", true+"");
-                return true;
+                    Log.i ("isMyServiceRunning?", true+"");
+                    return true;
             }
         }
         Log.i ("isMyServiceRunning?", false+"");
@@ -144,7 +140,7 @@ public class MainActivity extends AppCompatActivity
                                     }
                                 } catch (IOException ignored) {}
 
-                                NearestPoint nearest = LocationHandlerService.getNearestPoint(location, pointsOfInterest.values());
+                                NearestPoint nearest = LocationHandlerService.getNearestPoint(location, PointsOfInterest.pointsOfInterest.values());
                                 boolean isInside = nearest.getDistance() <= nearest.getGeoArea().getRadius();
 
                                 txt_location.setText("<Localização Atual> \n" +
@@ -179,27 +175,5 @@ public class MainActivity extends AppCompatActivity
                 );
     }
 
-    private static Map<String, GeoArea> getPointsOfInterest()
-    {
-        Map<String, GeoArea> points = new HashMap<>();
 
-        // beja
-        points.put("Beja", new GeoArea(38.079048, -7.925615, 2000.00f));
-
-        // humberto delgado
-        points.put("Humberto Delgado", new GeoArea(38.765486, -9.142942, 225.36f));
-        points.put("Humberto Delgado", new GeoArea(38.769585, -9.139723, 305.45f));
-        points.put("Humberto Delgado", new GeoArea(38.767427, -9.133200, 270.06f));
-        points.put("Humberto Delgado", new GeoArea(38.769501, -9.128865, 158.31f));
-        points.put("Humberto Delgado", new GeoArea(38.775058, -9.133049, 545.70f));
-        points.put("Humberto Delgado", new GeoArea(38.782845, -9.134198, 188.22f));
-        points.put("Humberto Delgado", new GeoArea(38.786811, -9.133851, 240.36f));
-        points.put("Humberto Delgado", new GeoArea(38.790781, -9.131366, 240.36f));
-        points.put("Humberto Delgado", new GeoArea(38.794769, -9.129276, 240.36f));
-
-        // bcp edificio 9
-        points.put("BCP", new GeoArea(38.743919,-9.306373,10));
-
-        return points;
-    }
 }
