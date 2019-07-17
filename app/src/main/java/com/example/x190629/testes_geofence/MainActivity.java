@@ -12,12 +12,14 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.x190629.testes_geofence.entities.GeoArea;
 import com.example.x190629.testes_geofence.entities.NearestPoint;
-import com.example.x190629.testes_geofence.services.LocationHandlerService;
+import com.example.x190629.testes_geofence.services.location.LocationHandlerService;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerLocationChanged;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderDisabled;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderEnabled;
@@ -39,6 +41,7 @@ public class MainActivity extends AppCompatActivity
     private BackgroundService backgroundService;
     private LocationHandlerService locationHandlerService;
 
+    private Button btn_getlocation;
     private TextView txt_location;
 
     @Override
@@ -47,18 +50,30 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        btn_getlocation = findViewById(R.id.btn_getlocation);
         txt_location = findViewById(R.id.txt_localizacao);
+        btn_getlocation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                // check location permission
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+                {
+                    Toast.makeText(MainActivity.this, "É preciso aceitar...", Toast.LENGTH_SHORT).show();
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION} ,1);
+                    return;
+                }
+
+                setLocationManager();
+
+                if (!LocationHandlerService.hasLocationPermissionsAndConnection(MainActivity.this)) {
+                    LocationHandlerService.connectToGooglePlayServices(MainActivity.this);
+                }
+            }
+        });
 
         if (pointsOfInterest == null || pointsOfInterest.isEmpty()) {
             pointsOfInterest = getPointsOfInterest();
-        }
-
-        // check location permission
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
-        {
-            Toast.makeText(this, "É preciso aceitar...", Toast.LENGTH_SHORT).show();
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION} ,1);
-            return;
         }
 
         locationHandlerService = new LocationHandlerService(
@@ -66,12 +81,6 @@ public class MainActivity extends AppCompatActivity
                 MIN_TIME_LOCATION_UPDATE,
                 MIN_DISTANCE_LOCATION_UPDATE
         );
-
-        setLocationManager();
-
-        if (!LocationHandlerService.hasLocationPermissionsAndConnection(this)) {
-            LocationHandlerService.connectToGooglePlayServices(this);
-        }
 
         backgroundService = new BackgroundService();
         locationServiceIntent = new Intent(this, backgroundService.getClass());
@@ -198,7 +207,7 @@ public class MainActivity extends AppCompatActivity
         points.put("Humberto Delgado", new GeoArea(38.794769, -9.129276, 240.36f));
 
         // bcp edificio 9
-        points.put("BCP", new GeoArea(38.743919,-9.306373,10));
+        points.put("BCP", new GeoArea(38.743919,-9.306373,100));
 
         return points;
     }
