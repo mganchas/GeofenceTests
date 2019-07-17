@@ -8,12 +8,18 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+<<<<<<< HEAD
 import com.example.x190629.testes_geofence.R;
-import com.example.x190629.testes_geofence.entities.NearestPoint;
-import com.example.x190629.testes_geofence.entities.PointsOfInterest;
 import com.example.x190629.testes_geofence.receivers.BackgroundServiceRestarterBroadcastReceiver;
 import com.example.x190629.testes_geofence.services.location.LocationHandlerService;
 import com.example.x190629.testes_geofence.services.notifications.NotificationService;
+=======
+import com.example.x190629.testes_geofence.MainActivity;
+import com.example.x190629.testes_geofence.entities.NearestPoint;
+import com.example.x190629.testes_geofence.entities.PointsOfInterest;
+import com.example.x190629.testes_geofence.receivers.BackgroundServiceRestarterBroadcastReceiver;
+import com.example.x190629.testes_geofence.services.LocationHandlerService;
+>>>>>>> repo_github/joaobranch3
 
 import java.io.IOException;
 import java.util.Timer;
@@ -21,7 +27,12 @@ import java.util.TimerTask;
 
 public class BackgroundService extends Service {
     private static final String TAG = BackgroundService.class.getSimpleName();
+<<<<<<< HEAD
     private static final int DEFAULT_TIMER_DELAY = 30 * 1000;
+
+=======
+    private static final int DEFAULT_TIMER_DELAY = 1000;
+>>>>>>> repo_github/joaobranch3
     private Timer timer;
     private TimerTask timerTask;
     private boolean pushSent;
@@ -48,8 +59,14 @@ public class BackgroundService extends Service {
         stopTimerTask();
     }
 
-    public void startTimer() {
+<<<<<<< HEAD
+    public void startTimer()
+    {
         Log.d(TAG, TAG + ".startTimer()");
+=======
+    public void startTimer() {
+        Log.d(TAG, "startTimer()");
+>>>>>>> repo_github/joaobranch3
 
         initializeTimerTask();
 
@@ -57,21 +74,17 @@ public class BackgroundService extends Service {
         timer.schedule(timerTask, DEFAULT_TIMER_DELAY, DEFAULT_TIMER_DELAY);
     }
 
-    public void initializeTimerTask() {
+<<<<<<< HEAD
+    public void initializeTimerTask()
+    {
         Log.d(TAG, TAG + ".initializeTimerTask()");
-        timerTask = new TimerTask() {
-            public void run() {
+
+        timerTask = new TimerTask()
+        {
+            public void run()
+            {
                 Log.d(TAG, TAG + ".initializeTimerTask().run()");
 
-                if (!LocationHandlerService.hasLocationPermissionsAndConnection(BackgroundService.this))
-                    return;
-                else {
-                    //get na bd
-                    String country = null, locality = null;
-                    LocationHandlerService ls = null;
-                    Location location = null;
-                    location = ls.getGetBestLocationAvailable();
-                    try {
 
                 boolean locationOn = LocationHandlerService.isAnyLocationProviderConnected(BackgroundService.this);
                 Log.d(TAG, TAG + ".initializeTimerTask().run() locationOn = " + locationOn);
@@ -86,6 +99,23 @@ public class BackgroundService extends Service {
 
 
                 // TODO: business logic para quando em background
+=======
+    public void initializeTimerTask() {
+        Log.d(TAG, "initializeTimerTask()");
+        timerTask = new TimerTask() {
+            public void run() {
+                Log.d(TAG, "initializeTimerTask().run()");
+
+                if (!LocationHandlerService.hasLocationPermissionsAndConnection(BackgroundService.this))
+                    return;
+                else {
+                    //get na bd
+                    String country = null, locality = null;
+                    LocationHandlerService ls = null;
+                    Location location = null;
+                    location = ls.getGetBestLocationAvailable();
+                    try {
+
                         location = ls.getGetBestLocationAvailable();
                         Address address = LocationHandlerService.getLocationAddress(BackgroundService.this, location.getLatitude(), location.getLongitude());
                         if (address != null) {
@@ -112,13 +142,20 @@ public class BackgroundService extends Service {
 
 
                 }
+>>>>>>> repo_github/joaobranch3
             }
         };
     }
 
+<<<<<<< HEAD
+    public void stopTimerTask()
+    {
+        Log.d(TAG, TAG + ".stopTimerTask()");
+=======
 
     public void stopTimerTask() {
-        Log.d(TAG, TAG + ".stopTimerTask()");
+        Log.d(TAG, "stopTimerTask()");
+>>>>>>> repo_github/joaobranch3
 
         if (timer != null) {
             timer.cancel();
