@@ -3,7 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/michaelganchas-geofencingtests-68ddc93cb227.iml" filepath="$PROJECT_DIR$/michaelganchas-geofencingtests-68ddc93cb227.iml" />
+      <module fileurl="file://C:\Users\X190629\Desktop\Projetos\Mobile_BCP\testes_geofence\michaelganchas-geofencingtests-68ddc93cb227.iml" filepath="C:\Users\X190629\Desktop\Projetos\Mobile_BCP\testes_geofence\michaelganchas-geofencingtests-68ddc93cb227.iml" />
+      <module fileurl="file://$PROJECT_DIR$/testes_geofence.iml" filepath="$PROJECT_DIR$/testes_geofence.iml" />
       <module fileurl="file://C:\Users\X191104\Downloads\michaelganchas-geofencingtests-68ddc93cb227\testes_geofence.iml" filepath="C:\Users\X191104\Downloads\michaelganchas-geofencingtests-68ddc93cb227\testes_geofence.iml" />
     </modules>
   </component>

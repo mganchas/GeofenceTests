@@ -1,4 +1,4 @@
-package com.example.x190629.testes_geofence.services;
+package com.example.x190629.testes_geofence.services.location;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -18,6 +18,7 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.x190629.testes_geofence.entities.Airport;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerLocationChanged;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderDisabled;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderEnabled;
@@ -181,6 +182,28 @@ public class LocationHandlerService
         return null;
     }
 
+    @SuppressLint("MissingPermission")
+    public static Location getGetBestLocationAvailable(@NonNull Context context)
+    {
+        LocationManager locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
+        Location ctxLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        if (ctxLocation != null) {
+            return ctxLocation;
+        }
+
+        ctxLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if (ctxLocation != null) {
+            return ctxLocation;
+        }
+
+        ctxLocation = locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+        if (ctxLocation != null) {
+            return ctxLocation;
+        }
+
+        return null;
+    }
+
     public static boolean hasLocationPermissionsAndConnection(@NonNull Context context)
     {
         return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
@@ -242,32 +265,38 @@ public class LocationHandlerService
         return null;
     }
 
-    public NearestPoint getNearestPoint(Collection<GeoArea> pointsOfInterest) {
+    public NearestPoint getNearestPoint(Collection<Airport> pointsOfInterest) {
         return getNearestPoint(getGetBestLocationAvailable(), pointsOfInterest);
     }
 
-    public static NearestPoint getNearestPoint(Location currentLocation, Collection<GeoArea> pointsOfInterest)
+    public static NearestPoint getNearestPoint(Location currentLocation, Collection<Airport> airports)
     {
-        GeoArea nearestGoal = null;
-        float distance = POSITIVE_INFINITY;
+        Airport nearestAirport = null;
+        int geoAreaIndex = 0;
+        float minDistance = POSITIVE_INFINITY;
 
-        for(GeoArea location : pointsOfInterest)
+        for (Airport airport: airports)
         {
-            float distanceBetweenLocations = getDistanceBetweenLocations(
-                    location.getLatitude(),
-                    location.getLongitude(),
-                    currentLocation.getLatitude(),
-                    currentLocation.getLongitude()
-            );
-
-            if(distance > distanceBetweenLocations)
+            for(int i = 0; i < airport.getFence().size(); i++)
             {
-                distance = distanceBetweenLocations;
-                nearestGoal = location;
+                GeoArea location = airport.getFence().get(i);
+                float distanceBetweenLocations = getDistanceBetweenLocations(
+                        location.getLatitude(),
+                        location.getLongitude(),
+                        currentLocation.getLatitude(),
+                        currentLocation.getLongitude()
+                );
+
+                if(distanceBetweenLocations < minDistance)
+                {
+                    nearestAirport = airport;
+                    geoAreaIndex = i;
+                    minDistance = distanceBetweenLocations;
+                }
             }
         }
 
-        return new NearestPoint(nearestGoal, distance);
+        return new NearestPoint(nearestAirport, geoAreaIndex, minDistance);
     }
 
     public static void connectToGooglePlayServices(@NonNull final Activity activity)

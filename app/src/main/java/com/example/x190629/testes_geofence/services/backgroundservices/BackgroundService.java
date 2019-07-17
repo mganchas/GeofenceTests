@@ -26,7 +26,9 @@ public class BackgroundService extends Service {
     private TimerTask timerTask;
     private boolean pushSent;
 
-    public BackgroundService() { super(); }
+    public BackgroundService() {
+        super();
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -63,59 +65,52 @@ public class BackgroundService extends Service {
             public void run() {
                 Log.d(TAG, TAG + ".initializeTimerTask().run()");
 
-                if (!LocationHandlerService.hasLocationPermissionsAndConnection(BackgroundService.this))
+                if (!LocationHandlerService.hasLocationPermissionsAndConnection(BackgroundService.this)) {
                     return;
-                else {
-                    //get na bd
-                    String country = null, locality = null;
-                    LocationHandlerService ls = null;
-                    Location location = null;
-                    location = ls.getGetBestLocationAvailable();
-                    try {
+                }
 
-                boolean locationOn = LocationHandlerService.isAnyLocationProviderConnected(BackgroundService.this);
-                Log.d(TAG, TAG + ".initializeTimerTask().run() locationOn = " + locationOn);
+                //get na bd
+                String country = null, locality = null;
+                Location location = LocationHandlerService.getGetBestLocationAvailable(BackgroundService.this);
+                try
+                {
+                    location = LocationHandlerService.getGetBestLocationAvailable(BackgroundService.this);
+                    if (location == null) { return; }
 
-                //NotificationService.cancelAll(BackgroundService.this);
-                NotificationService.sendNotification(BackgroundService.this,
-                        locationOn ? "O utilizador ativou a localização" : "O utilizador desligou a localização",
-                        "Serviços localização ligados: " + locationOn,
-                        "Powered by Millennium BCP",
-                        R.drawable.ic_launcher_foreground
-                );
-
-
-                // TODO: business logic para quando em background
-                        location = ls.getGetBestLocationAvailable();
-                        Address address = LocationHandlerService.getLocationAddress(BackgroundService.this, location.getLatitude(), location.getLongitude());
-                        if (address != null) {
-                            country = address.getCountryCode();
-                        }
-                    } catch (IOException ignored) {
-                    }
-                    NearestPoint nearest = LocationHandlerService.getNearestPoint(location, PointsOfInterest.pointsOfInterest.values());
-                    boolean isInside = nearest.getDistance() <= nearest.getGeoArea().getRadius();
-                    if (!isInside && country.equals("PT")) {
-                        pushSent = false;
-                        //upsert na bd
-                    } else if (isInside && pushSent == false) {
-                        //send push
-                        pushSent = true;
-                        //upsert na bd
-
-                    } else if (!country.equals("PT") && pushSent == false) {
-                        //send push
-                        pushSent = true;
-                        //upsert na bd
-
+                    Address address = LocationHandlerService.getLocationAddress(BackgroundService.this, location.getLatitude(), location.getLongitude());
+                    if (address != null) {
+                        country = address.getCountryCode();
+                        locality = address.getLocality();
                     }
 
+                } catch (IOException ignored) {}
 
+                if (country == null) { return; }
+
+                NearestPoint nearest = LocationHandlerService.getNearestPoint(location, PointsOfInterest.airports);
+                boolean isInside = nearest.getDistance() <= nearest.getGeoArea().getRadius();
+                if (isInside && !pushSent)
+                {
+                    //send push
+                    NotificationService.cancelAll(BackgroundService.this);
+                    NotificationService.sendNotification(BackgroundService.this,
+                            "Powered by Millennium BCP",
+                            "País: " + country,
+                            "Localidade: " + locality,
+                            R.drawable.ic_launcher_foreground
+                    );
+
+                    pushSent = true;
+                    //upsert na bd
+                }
+                else if (!isInside && country.equals("PT"))
+                {
+                    pushSent = false;
+                    //upsert na bd
                 }
             }
         };
     }
-
 
     public void stopTimerTask() {
         Log.d(TAG, TAG + ".stopTimerTask()");
@@ -125,7 +120,6 @@ public class BackgroundService extends Service {
             timer = null;
         }
     }
-
 
     @Nullable
     @Override

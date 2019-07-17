@@ -30,7 +30,10 @@ public class Airport implements Serializable
         return fence;
     }
 
-    public void addGeoArea(@NonNull GeoArea geoArea) {
-        this.fence.add(geoArea);
+    public void addGeoArea(@NonNull GeoArea geoArea)
+    {
+        if (!fence.contains(geoArea)) {
+            fence.add(geoArea);
+        }
     }
 }

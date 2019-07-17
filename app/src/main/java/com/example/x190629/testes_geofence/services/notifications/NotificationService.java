@@ -1,11 +1,8 @@
 package com.example.x190629.testes_geofence.services.notifications;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
@@ -29,7 +26,7 @@ public class NotificationService {
         }
     }
 
-    public static void sendNotification(@NonNull Context context, @NonNull String body, @NonNull String subject, @NonNull String subText, int icon)
+    public static void sendNotification(@NonNull Context context, @NonNull String subText, @NonNull String subject, @NonNull String body, int icon)
     {
         Log.d(TAG, "sendNotification(): \n" +
                 "body = " + body + "\n" +
