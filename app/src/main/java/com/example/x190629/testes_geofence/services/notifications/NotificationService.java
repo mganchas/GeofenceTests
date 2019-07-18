@@ -3,6 +3,8 @@ package com.example.x190629.testes_geofence.services.notifications;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
@@ -33,6 +35,8 @@ public class NotificationService {
                 "subject = " + subject + "\n" +
                 "subText = " + subText + "\n");
 
+        Uri soundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         Notification.Builder notificationBuilder = new Notification.Builder(context)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -40,6 +44,8 @@ public class NotificationService {
                 .setContentTitle(subject)
                 .setSubText(subText)
                 .setContentText(body)
+                .setSound(soundUri)
+                .setAutoCancel(true)
                 .setPriority(Notification.PRIORITY_MAX)
                 .setDefaults(NotificationCompat.DEFAULT_VIBRATE);
 
@@ -47,6 +53,8 @@ public class NotificationService {
             notificationBuilder.setCategory(Notification.CATEGORY_MESSAGE);
         }
 
-        notificationManager.notify(0, notificationBuilder.build());
+        if (notificationManager != null) {
+            notificationManager.notify(0, notificationBuilder.build());
+        }
     }
 }

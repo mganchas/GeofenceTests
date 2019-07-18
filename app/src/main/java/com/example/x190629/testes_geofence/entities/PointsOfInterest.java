@@ -25,16 +25,17 @@ public class PointsOfInterest
     private static List<Airport> getPointsOfInterest()
     {
         List<Airport> points = new ArrayList<>();
-        List<GeoArea> geoFence = new ArrayList<>();
-        Airport airport = null;
+        List<GeoArea> geoFence;
+        Airport airport;
 
         // beja
+        geoFence = new ArrayList<>();
         geoFence.add(new GeoArea(38.079048, -7.925615, 2000.00f));
         airport = new Airport("Beja", geoFence);
         points.add(airport);
 
-        geoFence.clear();
         // humberto delgado
+        geoFence = new ArrayList<>();
         geoFence.add(new GeoArea(38.765486, -9.142942, 225.36f));
         geoFence.add(new GeoArea(38.769585, -9.139723, 305.45f));
         geoFence.add(new GeoArea(38.767427, -9.133200, 270.06f));

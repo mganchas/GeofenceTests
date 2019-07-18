@@ -24,16 +24,24 @@ import com.example.x190629.testes_geofence.services.abstractions.ILocationManage
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderEnabled;
 import com.example.x190629.testes_geofence.services.backgroundservices.BackgroundService;
 import com.example.x190629.testes_geofence.services.location.LocationHandlerService;
+import com.example.x190629.testes_geofence.workers.LocationWorker;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import androidx.work.Constraints;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 public class MainActivity extends AppCompatActivity {
     private static final int MIN_TIME_LOCATION_UPDATE = 0; // in milliseconds
     private static final int MIN_DISTANCE_LOCATION_UPDATE = 0; // in meters
     private static final String PORTUGAL_COUNTRY_CODE = "PT";
 
-    private Intent locationServiceIntent;
-    private BackgroundService backgroundService;
+    //private Intent locationServiceIntent;
+    //private BackgroundService backgroundService;
     private LocationHandlerService locationHandlerService;
 
     private TextView txt_location;
@@ -69,12 +77,14 @@ public class MainActivity extends AppCompatActivity {
                         MIN_DISTANCE_LOCATION_UPDATE
                 );
 
+                /*
                 backgroundService = new BackgroundService();
                 locationServiceIntent = new Intent(MainActivity.this, backgroundService.getClass());
 
                 if (!isMyServiceRunning(backgroundService.getClass())) {
                     startService(locationServiceIntent);
                 }
+                */
 
                 // check location permission
                 if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -88,6 +98,17 @@ public class MainActivity extends AppCompatActivity {
                 if (!LocationHandlerService.hasLocationPermissionsAndConnection(MainActivity.this)) {
                     LocationHandlerService.connectToGooglePlayServices(MainActivity.this);
                 }
+
+                Constraints constraints = new Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                        .build();
+
+                PeriodicWorkRequest saveRequest =
+                        new PeriodicWorkRequest.Builder(LocationWorker.class, 15, TimeUnit.MINUTES)
+                                .setConstraints(constraints)
+                                .build();
+
+                WorkManager.getInstance().enqueue(saveRequest);
             }
         });
     }
@@ -113,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        stopService(locationServiceIntent);
+        //stopService(locationServiceIntent);
         Log.i("MAINACT", "onDestroy!");
         super.onDestroy();
 
