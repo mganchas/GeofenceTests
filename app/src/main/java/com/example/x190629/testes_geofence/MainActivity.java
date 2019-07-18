@@ -3,13 +3,20 @@ package com.example.x190629.testes_geofence;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.location.Address;
 import android.location.Location;
+import android.media.RingtoneManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -24,6 +31,7 @@ import com.example.x190629.testes_geofence.services.abstractions.ILocationManage
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderEnabled;
 import com.example.x190629.testes_geofence.services.backgroundservices.BackgroundService;
 import com.example.x190629.testes_geofence.services.location.LocationHandlerService;
+import com.example.x190629.testes_geofence.services.notifications.NotificationService;
 import com.example.x190629.testes_geofence.workers.LocationWorker;
 
 import java.io.IOException;
@@ -39,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int MIN_TIME_LOCATION_UPDATE = 0; // in milliseconds
     private static final int MIN_DISTANCE_LOCATION_UPDATE = 0; // in meters
     private static final String PORTUGAL_COUNTRY_CODE = "PT";
+
+    private static final String TAG = MainActivity.class.getName();
 
     //private Intent locationServiceIntent;
     //private BackgroundService backgroundService;
@@ -56,6 +66,67 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btn_add_bcp).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d(TAG,"add bcp click");
+
+
+               /* NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(MainActivity.this,  getResources().getString(R.string.app_name));
+                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+                /* Create or update. */
+                 /*   NotificationChannel channel = new NotificationChannel(getResources().getString(R.string.app_name),
+                            getResources().getString(R.string.app_name),
+                            NotificationManager.IMPORTANCE_HIGH);
+
+                    if (notificationManager != null) {
+                        notificationManager.createNotificationChannel(channel);
+
+                    }
+                }
+
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT || Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+                    notificationBuilder
+                            .setContentTitle(getString(R.string.app_name))  // We still need this because on old android versions bigtextstyle displays nothing
+                            .setContentText("TEXTOOO")                        // We still need this because on old android versions bigtextstyle displays nothing
+                            .setSmallIcon(R.drawable.ic_all_out_black_24dp)
+                            .setChannelId(getResources().getString(R.string.app_name))
+                            .setDefaults(Notification.DEFAULT_ALL)
+                            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                            .setAutoCancel(true);
+
+                }else{
+                    if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1 ) {
+
+                        notificationBuilder
+                                .setContentTitle(getString(R.string.app_name))  // We still need this because on old android versions bigtextstyle displays nothing
+                                .setContentText("textoooo")                        // We still need this because on old android versions bigtextstyle displays nothing
+                                .setSmallIcon(R.drawable.ic_all_out_black_24dp)
+                                .setLargeIcon(BitmapFactory.decodeResource(  getApplicationContext().getResources(), R.drawable.ic_all_out_black_24dp))
+                                .setChannelId(getResources().getString(R.string.app_name))
+                                .setDefaults(Notification.DEFAULT_ALL)
+                                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                                .setAutoCancel(true);
+                    }else{
+                        notificationBuilder
+                                .setContentTitle(getString(R.string.app_name))  // We still need this because on old android versions bigtextstyle displays nothing
+                                .setContentText("textooooo")                        // We still need this because on old android versions bigtextstyle displays nothing
+                                .setSmallIcon(R.drawable.ic_all_out_black_24dp)
+                                .setChannelId(getResources().getString(R.string.app_name))
+                                .setDefaults(Notification.DEFAULT_ALL)
+                                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                                .setAutoCancel(true);
+                    }
+
+                }
+
+                if (notificationManager != null) {
+                    notificationManager.notify(String.valueOf(System.currentTimeMillis()),1, notificationBuilder.build());
+                }
+
+*/
+
                 PointsOfInterest.addBCP();
             }
         });
