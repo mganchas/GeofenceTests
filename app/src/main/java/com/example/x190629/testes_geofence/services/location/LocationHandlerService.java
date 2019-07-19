@@ -18,6 +18,7 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.x190629.testes_geofence.MainActivity;
 import com.example.x190629.testes_geofence.entities.Airport;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerLocationChanged;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderDisabled;
@@ -182,6 +183,10 @@ public class LocationHandlerService
         return null;
     }
 
+    public NearestPoint getNearestPoint(Collection<Airport> pointsOfInterest) {
+        return getNearestPoint(getGetBestLocationAvailable(), pointsOfInterest);
+    }
+
     @SuppressLint("MissingPermission")
     public static Location getGetBestLocationAvailable(@NonNull Context context)
     {
@@ -218,9 +223,7 @@ public class LocationHandlerService
     public static boolean isGpsLocationConnected(@NonNull Context context)
     {
         LocationManager service = (LocationManager) context.getSystemService(LOCATION_SERVICE);
-        return service != null &&
-                service.isProviderEnabled(LocationManager.GPS_PROVIDER) &&
-                isInHighPrecisionMode(context);
+        return service != null && service.isProviderEnabled(LocationManager.GPS_PROVIDER) && isInHighPrecisionMode(context);
     }
 
     public static boolean isInHighPrecisionMode(@NonNull Context context)
@@ -263,10 +266,6 @@ public class LocationHandlerService
             return addresses.get(0);
         }
         return null;
-    }
-
-    public NearestPoint getNearestPoint(Collection<Airport> pointsOfInterest) {
-        return getNearestPoint(getGetBestLocationAvailable(), pointsOfInterest);
     }
 
     public static NearestPoint getNearestPoint(Location currentLocation, Collection<Airport> airports)

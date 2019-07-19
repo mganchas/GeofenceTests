@@ -49,6 +49,27 @@ public class LocationWorker extends Worker
 
         Context ctx = LocationWorker.this.getApplicationContext();
 
+<<<<<<< HEAD
+        return Result.success();
+    }
+
+    private void BL()
+    {
+        //get na bd
+        String country = null, locality = null;
+        Location location = LocationHandlerService.getGetBestLocationAvailable(LocationWorker.this.getApplicationContext());
+
+        Log.i(TAG, "BL() location is null? " + (location == null));
+        if (location == null) {return;}
+
+        try
+        {
+            Address address = LocationHandlerService.getLocationAddress(LocationWorker.this.getApplicationContext(), location.getLatitude(), location.getLongitude());
+            if (address != null) {
+                country = address.getCountryCode();
+                locality = address.getLocality();
+            }
+=======
         // 1 - Autorização envio de notificações
         if (!canSendNotifications)
         {
@@ -62,6 +83,7 @@ public class LocationWorker extends Worker
             Log.i(TAG, TAG + ".doWork() No authorization to receive notifications");
             return Result.success();
         }
+>>>>>>> repo_github/joaobranch6
 
         // 3 - Serviços de localização ligados
         if (!LocationHandlerService.isAnyLocationProviderConnected(ctx))
@@ -70,6 +92,10 @@ public class LocationWorker extends Worker
             return Result.success();
         }
 
+<<<<<<< HEAD
+        Log.i(TAG, "BL() country is null? " + (country == null));
+        if (country == null) { return; }
+=======
         // 4 - Localização disponível
         Location location = LocationHandlerService.getGetBestLocationAvailable(ctx);
         if (location == null)
@@ -77,6 +103,7 @@ public class LocationWorker extends Worker
             Log.i(TAG, TAG + ".doWork() Unable to get location");
             return Result.success();
         }
+>>>>>>> repo_github/joaobranch6
 
         // 5 - Geofence
         NearestPoint nearest = LocationHandlerService.getNearestPoint(location, PointsOfInterest.airports);
