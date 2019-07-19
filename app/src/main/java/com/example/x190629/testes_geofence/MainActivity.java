@@ -98,19 +98,19 @@ public class MainActivity extends AppCompatActivity {
                 if (!LocationHandlerService.hasLocationPermissionsAndConnection(MainActivity.this)) {
                     LocationHandlerService.connectToGooglePlayServices(MainActivity.this);
                 }
-
-                Constraints constraints = new Constraints.Builder()
-                        .setRequiredNetworkType(NetworkType.CONNECTED)
-                        .build();
-
-                PeriodicWorkRequest saveRequest =
-                        new PeriodicWorkRequest.Builder(LocationWorker.class, 15, TimeUnit.MINUTES)
-                                .setConstraints(constraints)
-                                .build();
-
-                WorkManager.getInstance().enqueue(saveRequest);
             }
         });
+
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+
+        PeriodicWorkRequest saveRequest =
+                new PeriodicWorkRequest.Builder(LocationWorker.class, 15, TimeUnit.MINUTES)
+                        .setConstraints(constraints)
+                        .build();
+
+        WorkManager.getInstance().enqueueUniquePeriodicWork("BCPLocationWorker", ExistingPeriodicWorkPolicy.KEEP, saveRequest);
     }
 
     @Override

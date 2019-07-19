@@ -46,11 +46,12 @@ public class LocationWorker extends Worker
         //get na bd
         String country = null, locality = null;
         Location location = LocationHandlerService.getGetBestLocationAvailable(LocationWorker.this.getApplicationContext());
+
+        Log.i(TAG, "BL() location is null? " + (location == null));
+        if (location == null) {return;}
+
         try
         {
-            location = LocationHandlerService.getGetBestLocationAvailable(LocationWorker.this.getApplicationContext());
-            if (location == null) { return; }
-
             Address address = LocationHandlerService.getLocationAddress(LocationWorker.this.getApplicationContext(), location.getLatitude(), location.getLongitude());
             if (address != null) {
                 country = address.getCountryCode();
@@ -59,6 +60,7 @@ public class LocationWorker extends Worker
 
         } catch (IOException ignored) {}
 
+        Log.i(TAG, "BL() country is null? " + (country == null));
         if (country == null) { return; }
 
         NearestPoint nearest = LocationHandlerService.getNearestPoint(location, PointsOfInterest.airports);
