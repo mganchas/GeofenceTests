@@ -2,46 +2,27 @@ package com.example.x190629.testes_geofence;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.ActivityManager;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.BitmapFactory;
 import android.location.Address;
 import android.location.Location;
-import android.media.RingtoneManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.x190629.testes_geofence.entities.NearestPoint;
 import com.example.x190629.testes_geofence.entities.PointsOfInterest;
+import com.example.x190629.testes_geofence.factories.BCPWorkerFactory;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerLocationChanged;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderDisabled;
 import com.example.x190629.testes_geofence.services.abstractions.ILocationManagerProviderEnabled;
-import com.example.x190629.testes_geofence.services.backgroundservices.BackgroundService;
 import com.example.x190629.testes_geofence.services.location.LocationHandlerService;
-import com.example.x190629.testes_geofence.services.notifications.NotificationService;
 import com.example.x190629.testes_geofence.workers.LocationWorker;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import androidx.work.Constraints;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.NetworkType;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
 
 public class MainActivity extends AppCompatActivity {
     private static final int MIN_TIME_LOCATION_UPDATE = 0; // in milliseconds
@@ -68,65 +49,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Log.d(TAG,"add bcp click");
 
-
-               /* NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(MainActivity.this,  getResources().getString(R.string.app_name));
-                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-                /* Create or update. */
-                 /*   NotificationChannel channel = new NotificationChannel(getResources().getString(R.string.app_name),
-                            getResources().getString(R.string.app_name),
-                            NotificationManager.IMPORTANCE_HIGH);
-
-                    if (notificationManager != null) {
-                        notificationManager.createNotificationChannel(channel);
-
-                    }
-                }
-
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT || Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-                    notificationBuilder
-                            .setContentTitle(getString(R.string.app_name))  // We still need this because on old android versions bigtextstyle displays nothing
-                            .setContentText("TEXTOOO")                        // We still need this because on old android versions bigtextstyle displays nothing
-                            .setSmallIcon(R.drawable.ic_all_out_black_24dp)
-                            .setChannelId(getResources().getString(R.string.app_name))
-                            .setDefaults(Notification.DEFAULT_ALL)
-                            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-                            .setAutoCancel(true);
-
-                }else{
-                    if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1 ) {
-
-                        notificationBuilder
-                                .setContentTitle(getString(R.string.app_name))  // We still need this because on old android versions bigtextstyle displays nothing
-                                .setContentText("textoooo")                        // We still need this because on old android versions bigtextstyle displays nothing
-                                .setSmallIcon(R.drawable.ic_all_out_black_24dp)
-                                .setLargeIcon(BitmapFactory.decodeResource(  getApplicationContext().getResources(), R.drawable.ic_all_out_black_24dp))
-                                .setChannelId(getResources().getString(R.string.app_name))
-                                .setDefaults(Notification.DEFAULT_ALL)
-                                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-                                .setAutoCancel(true);
-                    }else{
-                        notificationBuilder
-                                .setContentTitle(getString(R.string.app_name))  // We still need this because on old android versions bigtextstyle displays nothing
-                                .setContentText("textooooo")                        // We still need this because on old android versions bigtextstyle displays nothing
-                                .setSmallIcon(R.drawable.ic_all_out_black_24dp)
-                                .setChannelId(getResources().getString(R.string.app_name))
-                                .setDefaults(Notification.DEFAULT_ALL)
-                                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-                                .setAutoCancel(true);
-                    }
-
-                }
-
-                if (notificationManager != null) {
-                    notificationManager.notify(String.valueOf(System.currentTimeMillis()),1, notificationBuilder.build());
-                }
-
-*/
-
                 PointsOfInterest.addBCP();
             }
         });
@@ -148,17 +70,9 @@ public class MainActivity extends AppCompatActivity {
                         MIN_DISTANCE_LOCATION_UPDATE
                 );
 
-                /*
-                backgroundService = new BackgroundService();
-                locationServiceIntent = new Intent(MainActivity.this, backgroundService.getClass());
-
-                if (!isMyServiceRunning(backgroundService.getClass())) {
-                    startService(locationServiceIntent);
-                }
-                */
-
                 // check location permission
-                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+                {
                     Toast.makeText(MainActivity.this, "É preciso aceitar...", Toast.LENGTH_SHORT).show();
                     ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
                     return;
@@ -170,16 +84,7 @@ public class MainActivity extends AppCompatActivity {
                     LocationHandlerService.connectToGooglePlayServices(MainActivity.this);
                 }
 
-                Constraints constraints = new Constraints.Builder()
-                        .setRequiredNetworkType(NetworkType.CONNECTED)
-                        .build();
-
-                PeriodicWorkRequest saveRequest =
-                        new PeriodicWorkRequest.Builder(LocationWorker.class, 15, TimeUnit.MINUTES)
-                                .setConstraints(constraints)
-                                .build();
-
-                WorkManager.getInstance().enqueue(saveRequest);
+                new BCPWorkerFactory().create(LocationWorker.class, LocationWorker.getMinutes(), LocationWorker.getWorkerConstraints());
             }
         });
     }
@@ -191,6 +96,12 @@ public class MainActivity extends AppCompatActivity {
         // check location permission
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            return;
+        }
+
+        // check boot permission
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_BOOT_COMPLETED) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECEIVE_BOOT_COMPLETED}, 2);
             return;
         }
 
@@ -209,18 +120,6 @@ public class MainActivity extends AppCompatActivity {
         Log.i("MAINACT", "onDestroy!");
         super.onDestroy();
 
-    }
-
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                Log.i("isMyServiceRunning?", true + "");
-                return true;
-            }
-        }
-        Log.i("isMyServiceRunning?", false + "");
-        return false;
     }
 
     private void setLocationManager() {

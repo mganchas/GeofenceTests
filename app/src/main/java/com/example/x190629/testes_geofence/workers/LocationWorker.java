@@ -1,20 +1,25 @@
 package com.example.x190629.testes_geofence.workers;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Location;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
+import com.example.x190629.testes_geofence.MainActivity;
 import com.example.x190629.testes_geofence.R;
 import com.example.x190629.testes_geofence.entities.NearestPoint;
 import com.example.x190629.testes_geofence.entities.PointsOfInterest;
-import com.example.x190629.testes_geofence.services.backgroundservices.BackgroundService;
 import com.example.x190629.testes_geofence.services.location.LocationHandlerService;
 import com.example.x190629.testes_geofence.services.notifications.NotificationService;
 
 import java.io.IOException;
 
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
@@ -25,6 +30,12 @@ import androidx.work.WorkerParameters;
 public class LocationWorker extends Worker
 {
     private static final String TAG = LocationWorker.class.getSimpleName();
+    private static final int DELAY_MINUTES = 15; // in minutes
+    private static final String PORTUGAL_COUNTRY_CODE = "PT";
+
+    // mocks
+    private boolean notificationSent = false;
+    private boolean canSendNotifications = false;
 
     public LocationWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -34,42 +45,103 @@ public class LocationWorker extends Worker
     @Override
     public Result doWork()
     {
-        Log.i(TAG, "doWork()");
+        Log.i(TAG, TAG + ".doWork()");
 
-        BL();
+        Context ctx = LocationWorker.this.getApplicationContext();
+
+        // 1 - Autorização envio de notificações
+        if (!canSendNotifications)
+        {
+            Log.i(TAG, TAG + ".doWork() No authorization to receive notifications");
+            return Result.success();
+        }
+
+        // 2 - Autorização tracking localização
+        if (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+        {
+            Log.i(TAG, TAG + ".doWork() No authorization to receive notifications");
+            return Result.success();
+        }
+
+        // 3 - Serviços de localização ligados
+        if (!LocationHandlerService.isAnyLocationProviderConnected(ctx))
+        {
+            Log.i(TAG, TAG + ".doWork() Location services disconnected");
+            return Result.success();
+        }
+
+        // 4 - Localização disponível
+        Location location = LocationHandlerService.getGetBestLocationAvailable(ctx);
+        if (location == null)
+        {
+            Log.i(TAG, TAG + ".doWork() Unable to get location");
+            return Result.success();
+        }
+
+        // 5 - Geofence
+        NearestPoint nearest = LocationHandlerService.getNearestPoint(location, PointsOfInterest.airports);
+        boolean isInside = nearest.getDistance() <= nearest.getGeoArea().getRadius();
+
+        if (!isInside)
+        {
+            Log.i(TAG, TAG + ".doWork() Not inside geofence");
+
+            if (isInPortugal(ctx, location))
+            {
+                Log.i(TAG, TAG + ".doWork()Is in Portugal | Clearing notification sent flag");
+                saveLocalData(ctx, false);
+            }
+
+            return Result.success();
+        }
+
+        // 6 - Notificação já enviada
+        if (notificationSent)
+        {
+            Log.i(TAG, TAG + ".doWork() Inside geofence | Notification already sent");
+            return Result.success();
+        }
+
+        // 6 - Enviar notificação e guardar dados localmente
+        sendNotification(ctx);
+        saveLocalData(ctx, true);
 
         return Result.success();
     }
 
-    private void BL()
+    private static void sendNotification(@NonNull Context context)
     {
-        //get na bd
-        String country = null, locality = null;
-        Location location = LocationHandlerService.getGetBestLocationAvailable(LocationWorker.this.getApplicationContext());
-        try
-        {
-            location = LocationHandlerService.getGetBestLocationAvailable(LocationWorker.this.getApplicationContext());
-            if (location == null) { return; }
-
-            Address address = LocationHandlerService.getLocationAddress(LocationWorker.this.getApplicationContext(), location.getLatitude(), location.getLongitude());
-            if (address != null) {
-                country = address.getCountryCode();
-                locality = address.getLocality();
-            }
-
-        } catch (IOException ignored) {}
-
-        if (country == null) { return; }
-
-        NearestPoint nearest = LocationHandlerService.getNearestPoint(location, PointsOfInterest.airports);
-        boolean isInside = nearest.getDistance() <= nearest.getGeoArea().getRadius();
-        //send push
-        NotificationService.cancelAll(LocationWorker.this.getApplicationContext());
-        NotificationService.sendNotification(LocationWorker.this.getApplicationContext(),
+        NotificationService.cancelAll(context);
+        NotificationService.sendNotification(context,
                 "Powered by Millennium BCP",
-                "País: " + country,
-                "Localidade: " + locality,
+                "País: ",
+                "Localidade: ",
                 R.drawable.ic_launcher_foreground
         );
+    }
+
+    private static void saveLocalData(@NonNull Context context, boolean notificationSent)
+    {
+
+    }
+
+    private static boolean isInPortugal(@NonNull Context context, Location location)
+    {
+        Address address = null;
+        try {
+            address = LocationHandlerService.getLocationAddress(context, location.getLatitude(), location.getLongitude());
+        } catch (IOException ignored) {}
+
+        return (address != null && address.getCountryCode().equals(PORTUGAL_COUNTRY_CODE));
+    }
+
+    public static int getMinutes()
+    {
+        return DELAY_MINUTES;
+    }
+
+    public static Constraints getWorkerConstraints()
+    {
+        return new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build();
     }
 }
